@@ -1,0 +1,1433 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instamatch</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script>
+        tailwind.config = {
+            darkMode: 'class',
+            theme: {
+                extend: {
+                    colors: {
+                        primary: '#5D5CDE',
+                        secondary: '#8A7EDE',
+                        accent: '#DE7E8A',
+                        lavender: '#D0C5FA',
+                        blush: '#F4C5D0',
+                        background: {
+                            light: '#FFFFFF',
+                            dark: '#181818'
+                        },
+                        card: {
+                            light: '#F8F9FE',
+                            dark: '#252530'
+                        },
+                        text: {
+                            light: '#333344',
+                            dark: '#E6E6FA'
+                        }
+                    },
+                    boxShadow: {
+                        'soft': '0 4px 15px rgba(0, 0, 0, 0.05)',
+                        'inset-soft': 'inset 0 2px 5px rgba(0, 0, 0, 0.05)'
+                    }
+                }
+            }
+        };
+    </script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap');
+
+        body {
+            font-family: 'Poppins', sans-serif;
+            transition: background-color 0.3s, color 0.3s;
+            overscroll-behavior: contain;
+        }
+
+        .dark {
+            color-scheme: dark;
+        }
+
+        /* Bujji Character Styles */
+        .bujji {
+            width: 80px;
+            height: 80px;
+            border-radius: 50%;
+            background: radial-gradient(circle, #8A7EDE, #5D5CDE);
+            position: relative;
+            margin: 0 auto;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            box-shadow: 0 6px 16px rgba(93, 92, 222, 0.3);
+        }
+
+        .bujji .face {
+            width: 50px;
+            height: 50px;
+            background-color: white;
+            border-radius: 50%;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+        }
+
+        .bujji .face .eyes {
+            display: flex;
+            justify-content: space-between;
+            width: 30px;
+        }
+
+        .bujji .face .eyes .eye {
+            width: 8px;
+            height: 8px;
+            background-color: #333;
+            border-radius: 50%;
+        }
+
+        .bujji .face .mouth {
+            position: absolute;
+            top: 46px;
+            width: 20px;
+            height: 10px;
+            border-bottom-left-radius: 20px;
+            border-bottom-right-radius: 20px;
+            background-color: #333;
+        }
+
+        .bujji-speaking {
+            animation: pulse 1.5s infinite alternate;
+        }
+
+        .dark .bujji .face {
+            background-color: #333340;
+        }
+
+        .dark .bujji .face .eyes .eye,
+        .dark .bujji .face .mouth {
+            background-color: #E6E6FA;
+        }
+
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            100% { transform: scale(1.05); }
+        }
+
+        /* Map and Heatmap Styles */
+        .heatmap-dot {
+            position: absolute;
+            border-radius: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .heatmap-hot {
+            background-color: rgba(222, 126, 138, 0.6);
+            box-shadow: 0 0 15px rgba(222, 126, 138, 0.4);
+        }
+
+        .heatmap-warm {
+            background-color: rgba(255, 190, 105, 0.5);
+            box-shadow: 0 0 12px rgba(255, 190, 105, 0.3);
+        }
+
+        .heatmap-cool {
+            background-color: rgba(93, 92, 222, 0.4);
+            box-shadow: 0 0 10px rgba(93, 92, 222, 0.2);
+        }
+
+        /* Animations */
+        .slide-up {
+            animation: slideUp 0.4s ease forwards;
+        }
+
+        @keyframes slideUp {
+            from { 
+                transform: translateY(20px);
+                opacity: 0;
+            }
+            to { 
+                transform: translateY(0);
+                opacity: 1;
+            }
+        }
+
+        .fade-in {
+            animation: fadeIn 0.5s forwards;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .ripple {
+            position: relative;
+        }
+
+        .ripple:after {
+            content: '';
+            position: absolute;
+            width: 100%;
+            height: 100%;
+            top: 0;
+            left: 0;
+            background-color: rgba(93, 92, 222, 0.3);
+            border-radius: 50%;
+            z-index: -1;
+            animation: ripple 1.5s ease-out infinite;
+        }
+
+        @keyframes ripple {
+            0% {
+                transform: scale(1);
+                opacity: 1;
+            }
+            100% {
+                transform: scale(1.5);
+                opacity: 0;
+            }
+        }
+
+        /* Dialog bubble effect */
+        .bubble {
+            position: relative;
+        }
+
+        .bubble:after {
+            content: '';
+            position: absolute;
+            top: 100%;
+            left: 20px;
+            border: 10px solid transparent;
+            border-top-color: white;
+        }
+
+        .dark .bubble:after {
+            border-top-color: #252530;
+        }
+
+        /* Typing animation */
+        .typing span {
+            display: inline-block;
+            width: 6px;
+            height: 6px;
+            background-color: #5D5CDE;
+            border-radius: 50%;
+            margin: 0 2px;
+            animation: typing 1.4s infinite both;
+        }
+
+        .typing span:nth-child(2) {
+            animation-delay: 0.2s;
+        }
+
+        .typing span:nth-child(3) {
+            animation-delay: 0.4s;
+        }
+
+        @keyframes typing {
+            0% {
+                opacity: 0.4;
+                transform: translateY(0);
+            }
+            50% {
+                opacity: 1;
+                transform: translateY(-5px);
+            }
+            100% {
+                opacity: 0.4;
+                transform: translateY(0);
+            }
+        }
+
+        /* Switch Toggle */
+        .toggle-switch {
+            position: relative;
+            display: inline-block;
+            width: 48px;
+            height: 24px;
+        }
+
+        .toggle-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+        }
+
+        .toggle-slider {
+            position: absolute;
+            cursor: pointer;
+            top: 0;
+            left: 0;
+            right: 0;
+            bottom: 0;
+            background-color: #e0e0e0;
+            transition: .4s;
+            border-radius: 34px;
+        }
+
+        .toggle-slider:before {
+            position: absolute;
+            content: "";
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background-color: white;
+            transition: .4s;
+            border-radius: 50%;
+        }
+
+        input:checked + .toggle-slider {
+            background-color: #5D5CDE;
+        }
+
+        input:checked + .toggle-slider:before {
+            transform: translateX(24px);
+        }
+
+        /* Progress ring */
+        .progress-ring__circle {
+            transition: stroke-dashoffset 0.3s;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+
+        /* Custom scrollbar for chats */
+        .chat-container::-webkit-scrollbar {
+            width: 4px;
+        }
+
+        .chat-container::-webkit-scrollbar-track {
+            background: transparent;
+        }
+
+        .chat-container::-webkit-scrollbar-thumb {
+            background-color: rgba(93, 92, 222, 0.3);
+            border-radius: 4px;
+        }
+
+        /* Blur filter for privacy */
+        .profile-blur {
+            filter: blur(8px);
+            transition: filter 0.3s ease;
+        }
+
+        .profile-blur.revealed {
+            filter: blur(0);
+        }
+
+        /* Range slider styling */
+        input[type="range"] {
+            -webkit-appearance: none;
+            height: 8px;
+            border-radius: 4px;
+            background: #e0e0e0;
+            outline: none;
+        }
+
+        .dark input[type="range"] {
+            background: #333340;
+        }
+
+        input[type="range"]::-webkit-slider-thumb {
+            -webkit-appearance: none;
+            appearance: none;
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #5D5CDE;
+            cursor: pointer;
+        }
+
+        input[type="range"]::-moz-range-thumb {
+            width: 20px;
+            height: 20px;
+            border-radius: 50%;
+            background: #5D5CDE;
+            cursor: pointer;
+            border: none;
+        }
+    </style>
+</head>
+<body class="bg-background-light dark:bg-background-dark text-text-light dark:text-text-dark">
+    <div class="max-w-md mx-auto min-h-screen relative overflow-hidden">
+        <!-- Splash Screen -->
+        <div id="splash-screen" class="fixed inset-0 flex flex-col items-center justify-center bg-primary z-50">
+            <div class="text-4xl font-bold text-white mb-4">Instamatch</div>
+            <div class="text-xl text-white mb-8">Love happens when you feel seen, even without saying a word.</div>
+            <div class="w-16 h-16 border-4 border-white border-t-transparent rounded-full animate-spin"></div>
+        </div>
+
+        <!-- Welcome Screen with Bujji -->
+        <div id="welcome-screen" class="min-h-screen flex flex-col items-center justify-center p-6 hidden">
+            <h1 class="text-4xl font-bold mb-8 text-primary text-center">Welcome to Instamatch</h1>
+            <div class="bujji bujji-speaking mb-6">
+                <div class="face">
+                    <div class="eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                    <div class="mouth"></div>
+                </div>
+            </div>
+            <div class="bg-card-light dark:bg-card-dark p-4 rounded-lg shadow-soft mb-8 bubble relative">
+                <p class="mb-2">Hi! I'm Bujji, your personal assistant.</p>
+                <p>I'll help you find meaningful connections that feel comfortable for you. Ready to begin?</p>
+            </div>
+            <button id="start-onboarding-btn" class="w-full bg-primary text-white py-3 rounded-full shadow-soft font-medium mb-4">
+                Start Onboarding
+            </button>
+            <button id="skip-onboarding-btn" class="text-primary hover:underline">
+                Skip to Main App
+            </button>
+        </div>
+
+        <!-- Onboarding Container -->
+        <div id="onboarding-container" class="min-h-screen p-6 hidden">
+            <!-- Progress Bar -->
+            <div class="flex justify-between items-center mb-8">
+                <button id="back-btn" class="text-primary hover:underline">
+                    &larr; Back
+                </button>
+                <div class="flex-grow mx-4 relative">
+                    <svg class="w-12 h-12 mx-auto">
+                        <circle cx="24" cy="24" r="20" stroke="#E0E0E0" stroke-width="4" fill="none"></circle>
+                        <circle id="progress-indicator" class="progress-ring__circle" cx="24" cy="24" r="20" stroke="#5D5CDE" stroke-width="4" fill="none" stroke-dasharray="125.6" stroke-dashoffset="125.6"></circle>
+                    </svg>
+                    <span id="step-indicator" class="absolute text-xs top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2">1/5</span>
+                </div>
+                <button id="skip-step-btn" class="text-primary hover:underline">
+                    Skip
+                </button>
+            </div>
+
+            <!-- Bujji + Question Container -->
+            <div class="flex items-start mb-6">
+                <div class="bujji w-12 h-12 flex-shrink-0 mr-3">
+                    <div class="face">
+                        <div class="eyes">
+                            <div class="eye"></div>
+                            <div class="eye"></div>
+                        </div>
+                        <div class="mouth"></div>
+                    </div>
+                </div>
+                <div id="question-container" class="flex-grow bg-card-light dark:bg-card-dark p-4 rounded-lg shadow-soft mb-4">
+                    <p id="current-question" class="mb-2">Let's get to know you better. What's your name?</p>
+                    <p id="question-hint" class="text-sm text-gray-500 dark:text-gray-400 hidden">This helps me personalize your experience</p>
+                </div>
+            </div>
+
+            <!-- Answer Container -->
+            <div id="answer-container" class="mb-8">
+                <div id="text-input-container">
+                    <input id="text-input" type="text" placeholder="Enter your name" class="w-full px-4 py-3 rounded-lg border border-gray-200 dark:border-gray-700 focus:border-primary focus:ring focus:ring-primary focus:ring-opacity-50 text-base bg-white dark:bg-gray-800">
+                </div>
+                
+                <div id="interests-container" class="hidden">
+                    <div class="grid grid-cols-2 gap-3">
+                        <div class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center">
+                            <input type="checkbox" id="reading" class="mr-2 h-5 w-5 accent-primary">
+                            <label for="reading">Reading</label>
+                        </div>
+                        <div class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center">
+                            <input type="checkbox" id="coffee" class="mr-2 h-5 w-5 accent-primary">
+                            <label for="coffee">Coffee</label>
+                        </div>
+                        <div class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center">
+                            <input type="checkbox" id="music" class="mr-2 h-5 w-5 accent-primary">
+                            <label for="music">Music</label>
+                        </div>
+                        <div class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center">
+                            <input type="checkbox" id="art" class="mr-2 h-5 w-5 accent-primary">
+                            <label for="art">Art</label>
+                        </div>
+                        <div class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center">
+                            <input type="checkbox" id="tech" class="mr-2 h-5 w-5 accent-primary">
+                            <label for="tech">Technology</label>
+                        </div>
+                        <div class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center">
+                            <input type="checkbox" id="nature" class="mr-2 h-5 w-5 accent-primary">
+                            <label for="nature">Nature</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="slider-container" class="hidden">
+                    <div class="mb-4">
+                        <p class="text-sm mb-2">How introverted do you consider yourself?</p>
+                        <input type="range" id="introvert-slider" min="1" max="10" value="7" class="w-full">
+                        <div class="flex justify-between text-xs mt-1">
+                            <span>Less</span>
+                            <span>More</span>
+                        </div>
+                    </div>
+                    <div>
+                        <p class="text-sm mb-2">How important is personal space to you?</p>
+                        <input type="range" id="space-slider" min="1" max="10" value="8" class="w-full">
+                        <div class="flex justify-between text-xs mt-1">
+                            <span>Less</span>
+                            <span>More</span>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="preference-container" class="hidden">
+                    <p class="text-sm mb-3">What are you looking for on Instamatch?</p>
+                    <div class="space-y-2">
+                        <div class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center">
+                            <input type="radio" name="preference" id="dating" value="dating" class="mr-2 h-5 w-5 accent-primary">
+                            <label for="dating">Dating & Relationships</label>
+                        </div>
+                        <div class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center">
+                            <input type="radio" name="preference" id="friends" value="friends" class="mr-2 h-5 w-5 accent-primary">
+                            <label for="friends">Making New Friends</label>
+                        </div>
+                        <div class="p-3 border border-gray-200 dark:border-gray-700 rounded-lg flex items-center">
+                            <input type="radio" name="preference" id="activity" value="activity" class="mr-2 h-5 w-5 accent-primary">
+                            <label for="activity">Activity Partners</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div id="location-container" class="hidden text-center">
+                    <button id="location-btn" class="bg-primary text-white font-medium py-3 px-8 rounded-full shadow-soft mb-4 w-full">
+                        Allow Location Access
+                    </button>
+                    <p class="text-sm text-gray-500 dark:text-gray-400">Your location is only shared with matches and used to find nearby connections. You can change this in settings.</p>
+                </div>
+            </div>
+
+            <button id="next-btn" class="w-full bg-primary text-white py-3 rounded-full shadow-soft font-medium">
+                Next
+            </button>
+        </div>
+
+        <!-- Completion Screen -->
+        <div id="completion-screen" class="min-h-screen p-6 flex flex-col items-center justify-center hidden">
+            <div class="bujji mb-6">
+                <div class="face">
+                    <div class="eyes">
+                        <div class="eye"></div>
+                        <div class="eye"></div>
+                    </div>
+                    <div class="mouth"></div>
+                </div>
+            </div>
+            <div class="bg-card-light dark:bg-card-dark p-6 rounded-lg shadow-soft mb-8 w-full text-center">
+                <h2 class="text-2xl font-bold mb-3">Profile Complete!</h2>
+                <p class="mb-6">You've earned the "Confident Explorer" badge!</p>
+                <div class="inline-block p-4 bg-lavender dark:bg-primary bg-opacity-20 rounded-full mb-4">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                    </svg>
+                </div>
+                <p class="text-sm text-gray-500 dark:text-gray-400">You've taken the first step toward meaningful connections. Bujji is here to help whenever you need guidance.</p>
+            </div>
+            <button id="explore-btn" class="w-full bg-primary text-white py-3 rounded-full shadow-soft font-medium">
+                Start Exploring
+            </button>
+        </div>
+
+        <!-- Main App Interface -->
+        <div id="main-app" class="hidden">
+            <!-- Top Navigation -->
+            <nav class="bg-white dark:bg-gray-900 shadow-sm py-3 px-4 sticky top-0 z-20">
+                <div class="flex justify-between items-center">
+                    <div class="text-xl font-bold text-primary">Instamatch</div>
+                    <div class="flex items-center space-x-3">
+                        <div id="ghost-mode-toggle" class="flex items-center">
+                            <label class="toggle-switch">
+                                <input type="checkbox" id="ghost-mode-checkbox">
+                                <span class="toggle-slider"></span>
+                            </label>
+                        </div>
+                        <button id="nav-profile-btn" class="w-8 h-8 bg-primary text-white rounded-full flex items-center justify-center">
+                            J
+                        </button>
+                    </div>
+                </div>
+            </nav>
+
+            <!-- Tab Content Container -->
+            <div class="tab-content">
+                <!-- Heatmap Tab Content -->
+                <div id="heatmap-tab" class="p-4">
+                    <div class="mb-4">
+                        <h2 class="text-xl font-semibold mb-2">Nearby Hotspots</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Discover where compatible people are right now</p>
+                    </div>
+
+                    <!-- Safety Alert -->
+                    <div class="bg-green-50 dark:bg-green-900 dark:bg-opacity-20 border-l-4 border-green-500 p-3 rounded flex items-start mb-4">
+                        <div class="text-green-600 dark:text-green-400 mr-2 mt-0.5">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M9 12l2 2 4-4m5.618-4.016A11.955 11.955 0 0112 2.944a11.955 11.955 0 01-8.618 3.04A12.02 12.02 0 003 9c0 5.591 3.824 10.29 9 11.622 5.176-1.332 9-6.03 9-11.622 0-1.042-.133-2.052-.382-3.016z" />
+                            </svg>
+                        </div>
+                        <div>
+                            <p class="text-sm text-green-700 dark:text-green-300 font-medium">Ghost Mode is ON</p>
+                            <p class="text-xs text-green-600 dark:text-green-400">You're browsing anonymously</p>
+                        </div>
+                    </div>
+
+                    <!-- Simplified map with heatmap overlay -->
+                    <div class="bg-gray-100 dark:bg-gray-800 h-60 rounded-lg mb-4 relative overflow-hidden">
+                        <!-- Map base -->
+                        <div class="absolute inset-0">
+                            <!-- Streets/blocks represented as lines -->
+                            <div class="absolute top-1/4 left-0 right-0 h-0.5 bg-gray-300 dark:bg-gray-700"></div>
+                            <div class="absolute top-2/4 left-0 right-0 h-0.5 bg-gray-300 dark:bg-gray-700"></div>
+                            <div class="absolute top-3/4 left-0 right-0 h-0.5 bg-gray-300 dark:bg-gray-700"></div>
+                            <div class="absolute left-1/4 top-0 bottom-0 w-0.5 bg-gray-300 dark:bg-gray-700"></div>
+                            <div class="absolute left-2/4 top-0 bottom-0 w-0.5 bg-gray-300 dark:bg-gray-700"></div>
+                            <div class="absolute left-3/4 top-0 bottom-0 w-0.5 bg-gray-300 dark:bg-gray-700"></div>
+                            
+                            <!-- Heatmap Hot Spots -->
+                            <div class="heatmap-dot heatmap-hot" style="top: 30%; left: 35%; width: 50px; height: 50px;"></div>
+                            <div class="heatmap-dot heatmap-warm" style="top: 70%; left: 65%; width: 40px; height: 40px;"></div>
+                            <div class="heatmap-dot heatmap-cool" style="top: 55%; left: 25%; width: 30px; height: 30px;"></div>
+                            <div class="heatmap-dot heatmap-cool" style="top: 20%; left: 75%; width: 25px; height: 25px;"></div>
+                            
+                            <!-- Your location -->
+                            <div class="absolute ripple" style="top: 50%; left: 50%; width: 16px; height: 16px; background-color: #5D5CDE; border-radius: 50%; transform: translate(-50%, -50%); z-index: 10;"></div>
+                        </div>
+                        
+                        <!-- Map Legend -->
+                        <div class="absolute bottom-2 left-2 bg-white dark:bg-gray-900 rounded p-1 text-xs">
+                            <div class="flex items-center mb-1">
+                                <span class="inline-block w-3 h-3 bg-accent opacity-60 rounded-full mr-1"></span>
+                                <span>High activity</span>
+                            </div>
+                            <div class="flex items-center mb-1">
+                                <span class="inline-block w-3 h-3 bg-yellow-400 opacity-60 rounded-full mr-1"></span>
+                                <span>Medium activity</span>
+                            </div>
+                            <div class="flex items-center">
+                                <span class="inline-block w-3 h-3 bg-primary opacity-60 rounded-full mr-1"></span>
+                                <span>Low activity</span>
+                            </div>
+                        </div>
+                    </div>
+
+                    <!-- Venue Cards -->
+                    <h3 class="font-medium mb-3">Popular Venues Nearby</h3>
+                    <div class="space-y-3 mb-6">
+                        <!-- Venue Card 1 -->
+                        <div class="bg-card-light dark:bg-card-dark p-3 rounded-lg shadow-soft flex items-center" id="venue-card-1">
+                            <div class="bg-primary text-white rounded-lg w-14 h-14 flex flex-col items-center justify-center mr-3 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M3 3h2l.4 2M7 13h10l4-8H5.4M7 13L5.4 5M7 13l-2.293 2.293c-.63.63-.184 1.707.707 1.707H17m0 0a2 2 0 100 4 2 2 0 000-4zm-8 2a2 2 0 11-4 0 2 2 0 014 0z" />
+                                </svg>
+                                <span class="text-xs mt-1">Café</span>
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between mb-1">
+                                    <h4 class="font-medium">Quiet Corner Café</h4>
+                                    <span class="text-accent bg-accent bg-opacity-10 text-xs px-2 py-0.5 rounded-full font-medium">Hot</span>
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">300m away • 9 introverts</div>
+                                <div class="flex items-center">
+                                    <div class="text-xs bg-lavender dark:bg-primary dark:bg-opacity-20 text-primary px-2 py-0.5 rounded-full mr-1">Reading</div>
+                                    <div class="text-xs bg-lavender dark:bg-primary dark:bg-opacity-20 text-primary px-2 py-0.5 rounded-full">Coffee</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Venue Card 2 -->
+                        <div class="bg-card-light dark:bg-card-dark p-3 rounded-lg shadow-soft flex items-center" id="venue-card-2">
+                            <div class="bg-secondary text-white rounded-lg w-14 h-14 flex flex-col items-center justify-center mr-3 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z" />
+                                </svg>
+                                <span class="text-xs mt-1">Park</span>
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between mb-1">
+                                    <h4 class="font-medium">Serenity Gardens</h4>
+                                    <span class="text-yellow-600 bg-yellow-100 dark:bg-yellow-900 dark:bg-opacity-30 dark:text-yellow-300 text-xs px-2 py-0.5 rounded-full font-medium">Warm</span>
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">450m away • 5 introverts</div>
+                                <div class="flex items-center">
+                                    <div class="text-xs bg-lavender dark:bg-primary dark:bg-opacity-20 text-primary px-2 py-0.5 rounded-full mr-1">Nature</div>
+                                    <div class="text-xs bg-lavender dark:bg-primary dark:bg-opacity-20 text-primary px-2 py-0.5 rounded-full">Art</div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Venue Card 3 -->
+                        <div class="bg-card-light dark:bg-card-dark p-3 rounded-lg shadow-soft flex items-center" id="venue-card-3">
+                            <div class="bg-accent text-white rounded-lg w-14 h-14 flex flex-col items-center justify-center mr-3 flex-shrink-0">
+                                <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+                                </svg>
+                                <span class="text-xs mt-1">Bookstore</span>
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between mb-1">
+                                    <h4 class="font-medium">Cozy Tales Bookstore</h4>
+                                    <span class="text-primary bg-lavender dark:bg-primary dark:bg-opacity-20 text-xs px-2 py-0.5 rounded-full font-medium">Cool</span>
+                                </div>
+                                <div class="text-xs text-gray-500 dark:text-gray-400 mb-1">600m away • 3 introverts</div>
+                                <div class="flex items-center">
+                                    <div class="text-xs bg-lavender dark:bg-primary dark:bg-opacity-20 text-primary px-2 py-0.5 rounded-full mr-1">Reading</div>
+                                    <div class="text-xs bg-lavender dark:bg-primary dark:bg-opacity-20 text-primary px-2 py-0.5 rounded-full">Coffee</div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Discover Tab Content -->
+                <div id="discover-tab" class="p-4 hidden">
+                    <div class="mb-4">
+                        <h2 class="text-xl font-semibold mb-2">Discover</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">People who match your personality & interests</p>
+                    </div>
+
+                    <!-- AI Match Rate -->
+                    <div class="bg-card-light dark:bg-card-dark p-3 rounded-lg shadow-soft mb-4">
+                        <div class="flex items-center mb-2">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-primary mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M13 10V3L4 14h7v7l9-11h-7z" />
+                            </svg>
+                            <span class="font-medium">AI Matchmaking Active</span>
+                        </div>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-2">Finding people who share your quiet enthusiasm for life</p>
+                        <div class="flex justify-between text-xs">
+                            <span>Based on: Personality, Interests, Location</span>
+                            <span class="text-primary">92% accuracy</span>
+                        </div>
+                    </div>
+
+                    <!-- Match Cards -->
+                    <div class="space-y-4">
+                        <!-- Match Card 1 -->
+                        <div class="bg-card-light dark:bg-card-dark rounded-lg shadow-soft overflow-hidden">
+                            <div class="h-48 bg-gradient-to-br from-lavender to-primary relative profile-blur" id="profile-1-img">
+                                <button class="absolute top-2 right-2 bg-white dark:bg-gray-900 p-1.5 rounded-full shadow text-gray-500 dark:text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                    </svg>
+                                </button>
+                                <div class="absolute bottom-3 left-3">
+                                    <div class="bg-primary text-white px-2.5 py-1 rounded-full text-sm font-medium">Alex, 27</div>
+                                </div>
+                                <div class="absolute top-3 left-3 bg-accent text-white text-xs px-2 py-0.5 rounded-full">
+                                    94% Match
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <div class="flex items-center">
+                                        <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">400m away • Quiet Corner Café</span>
+                                    </div>
+                                    <button class="text-primary hover:underline text-sm reveal-profile" data-profile="profile-1-img">
+                                        Reveal
+                                    </button>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    <div class="text-xs bg-lavender dark:bg-primary dark:bg-opacity-20 text-primary px-2 py-0.5 rounded-full">Reading</div>
+                                    <div class="text-xs bg-lavender dark:bg-primary dark:bg-opacity-20 text-primary px-2 py-0.5 rounded-full">Coffee</div>
+                                    <div class="text-xs bg-lavender dark:bg-primary dark:bg-opacity-20 text-primary px-2 py-0.5 rounded-full">Music</div>
+                                </div>
+                                <p class="text-sm mb-4">"Looking for deep conversations over coffee. Introvert who loves books and indie music."</p>
+                                <div class="flex justify-between">
+                                    <div class="bg-gray-100 dark:bg-gray-800 p-2 rounded flex items-center w-24 text-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </div>
+                                    <button class="bg-primary text-white py-2 px-6 rounded-full">
+                                        Connect
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Match Card 2 -->
+                        <div class="bg-card-light dark:bg-card-dark rounded-lg shadow-soft overflow-hidden">
+                            <div class="h-48 bg-gradient-to-br from-blush to-accent relative profile-blur" id="profile-2-img">
+                                <button class="absolute top-2 right-2 bg-white dark:bg-gray-900 p-1.5 rounded-full shadow text-gray-500 dark:text-gray-400">
+                                    <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 8V4m0 0h4M4 4l5 5m11-1V4m0 0h-4m4 0l-5 5M4 16v4m0 0h4m-4 0l5-5m11 5v-4m0 4h-4m4 0l-5-5" />
+                                    </svg>
+                                </button>
+                                <div class="absolute bottom-3 left-3">
+                                    <div class="bg-primary text-white px-2.5 py-1 rounded-full text-sm font-medium">Sam, 29</div>
+                                </div>
+                                <div class="absolute top-3 left-3 bg-accent text-white text-xs px-2 py-0.5 rounded-full">
+                                    88% Match
+                                </div>
+                            </div>
+                            <div class="p-4">
+                                <div class="flex justify-between items-center mb-2">
+                                    <div class="flex items-center">
+                                        <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                                        <span class="text-sm text-gray-500 dark:text-gray-400">550m away • Serenity Gardens</span>
+                                    </div>
+                                    <button class="text-primary hover:underline text-sm reveal-profile" data-profile="profile-2-img">
+                                        Reveal
+                                    </button>
+                                </div>
+                                <div class="flex flex-wrap gap-2 mb-3">
+                                    <div class="text-xs bg-lavender dark:bg-primary dark:bg-opacity-20 text-primary px-2 py-0.5 rounded-full">Art</div>
+                                    <div class="text-xs bg-lavender dark:bg-primary dark:bg-opacity-20 text-primary px-2 py-0.5 rounded-full">Nature</div>
+                                    <div class="text-xs bg-lavender dark:bg-primary dark:bg-opacity-20 text-primary px-2 py-0.5 rounded-full">Technology</div>
+                                </div>
+                                <p class="text-sm mb-4">"Tech enthusiast who enjoys sketching in parks. Looking for someone to share quiet moments with."</p>
+                                <div class="flex justify-between">
+                                    <div class="bg-gray-100 dark:bg-gray-800 p-2 rounded flex items-center w-24 text-center justify-center">
+                                        <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5 text-gray-500 dark:text-gray-400" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </div>
+                                    <button class="bg-primary text-white py-2 px-6 rounded-full">
+                                        Connect
+                                    </button>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Chats Tab Content -->
+                <div id="chats-tab" class="hidden">
+                    <div class="p-4 border-b border-gray-200 dark:border-gray-800">
+                        <h2 class="text-xl font-semibold mb-2">Messages</h2>
+                        <p class="text-sm text-gray-500 dark:text-gray-400">Your active conversations (expire in 24h unless extended)</p>
+                    </div>
+
+                    <!-- Empty State -->
+                    <div id="empty-chats" class="hidden p-6 text-center">
+                        <div class="w-20 h-20 bg-lavender dark:bg-primary dark:bg-opacity-10 rounded-full mx-auto flex items-center justify-center mb-4">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-10 w-10 text-primary" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                            </svg>
+                        </div>
+                        <h3 class="font-medium mb-2">No conversations yet</h3>
+                        <p class="text-sm text-gray-500 dark:text-gray-400 mb-4">Match with someone to start chatting</p>
+                        <button class="bg-primary text-white py-2 px-6 rounded-full">
+                            Find Matches
+                        </button>
+                    </div>
+
+                    <!-- Chat List -->
+                    <div id="chat-list">
+                        <!-- Chat Item 1 -->
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex items-start" id="chat-item-1">
+                            <div class="w-12 h-12 bg-gradient-to-br from-lavender to-primary rounded-full flex items-center justify-center text-white font-medium mr-3 flex-shrink-0">
+                                A
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-center mb-1">
+                                    <h4 class="font-medium">Alex</h4>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">2h ago</span>
+                                </div>
+                                <p class="text-sm text-gray-600 dark:text-gray-300 mb-1 line-clamp-1">What kind of music do you usually listen to?</p>
+                                <div class="flex justify-between items-center">
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                        <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                                        Online • Quiet Corner Café
+                                    </div>
+                                    <div class="text-xs text-yellow-600 dark:text-yellow-400">
+                                        Expires in 22h
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                        
+                        <!-- Chat Item 2 -->
+                        <div class="p-4 border-b border-gray-200 dark:border-gray-800 flex items-start" id="chat-item-2">
+                            <div class="w-12 h-12 bg-gradient-to-br from-blush to-accent rounded-full flex items-center justify-center text-white font-medium mr-3 flex-shrink-0">
+                                S
+                            </div>
+                            <div class="flex-grow">
+                                <div class="flex justify-between items-center mb-1">
+                                    <h4 class="font-medium">Sam</h4>
+                                    <span class="text-xs text-gray-500 dark:text-gray-400">5h ago</span>
+                                </div>
+                                <div class="flex items-center text-sm text-gray-600 dark:text-gray-300 mb-1">
+                                    <div class="typing mr-1">
+                                        <span></span>
+                                        <span></span>
+                                        <span></span>
+                                    </div>
+                                    <span class="text-xs text-gray-500">typing...</span>
+                                </div>
+                                <div class="flex justify-between items-center">
+                                    <div class="text-xs text-gray-500 dark:text-gray-400">
+                                        <span class="inline-block w-2 h-2 bg-gray-400 rounded-full mr-1"></span>
+                                        Last seen 5m ago • Serenity Gardens
+                                    </div>
+                                    <div class="text-xs text-yellow-600 dark:text-yellow-400">
+                                        Expires in 19h
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Settings Tab Content -->
+                <div id="settings-tab" class="hidden p-4">
+                    <h2 class="text-xl font-semibold mb-6">Privacy & Settings</h2>
+                    
+                    <!-- Privacy Settings -->
+                    <div class="mb-6">
+                        <h3 class="font-medium mb-3">Privacy Controls</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium">Ghost Mode</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Browse anonymously</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" id="ghost-mode-settings" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium">Blur Profiles</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Blur photos until you choose to reveal</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium">Location Obfuscation</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Show approximate location only</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- Notification Settings -->
+                    <div class="mb-6">
+                        <h3 class="font-medium mb-3">Notifications</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium">New Matches</h4>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium">Messages</h4>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium">Nearby Activity</h4>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox">
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <!-- AI & Personalization -->
+                    <div class="mb-6">
+                        <h3 class="font-medium mb-3">AI & Personalization</h3>
+                        <div class="space-y-4">
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium">Bujji Assistant</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Get help from your personal guide</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium">AI Matchmaking</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Smart match recommendations</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                            <div class="flex justify-between items-center">
+                                <div>
+                                    <h4 class="text-sm font-medium">Icebreaker Suggestions</h4>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">Get conversation starters</p>
+                                </div>
+                                <label class="toggle-switch">
+                                    <input type="checkbox" checked>
+                                    <span class="toggle-slider"></span>
+                                </label>
+                            </div>
+                        </div>
+                    </div>
+                    
+                    <div class="mt-8">
+                        <button class="w-full bg-primary text-white py-3 rounded-full shadow-soft font-medium">
+                            Save Settings
+                        </button>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Bottom Navigation -->
+            <div class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 flex justify-around py-2 z-20">
+                <button id="nav-heatmap" class="flex flex-col items-center text-primary">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M17.657 16.657L13.414 20.9a1.998 1.998 0 01-2.827 0l-4.244-4.243a8 8 0 1111.314 0z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 11a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-xs">Explore</span>
+                </button>
+                <button id="nav-discover" class="flex flex-col items-center text-gray-500 dark:text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M21 21l-6-6m2-5a7 7 0 11-14 0 7 7 0 0114 0z" />
+                    </svg>
+                    <span class="text-xs">Discover</span>
+                </button>
+                <button id="nav-chats" class="flex flex-col items-center text-gray-500 dark:text-gray-400 relative">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 12h.01M12 12h.01M16 12h.01M21 12c0 4.418-4.03 8-9 8a9.863 9.863 0 01-4.255-.949L3 20l1.395-3.72C3.512 15.042 3 13.574 3 12c0-4.418 4.03-8 9-8s9 3.582 9 8z" />
+                    </svg>
+                    <span class="text-xs">Chats</span>
+                    <span class="absolute -top-1 -right-1 bg-accent text-white text-xs w-5 h-5 rounded-full flex items-center justify-center">
+                        2
+                    </span>
+                </button>
+                <button id="nav-settings" class="flex flex-col items-center text-gray-500 dark:text-gray-400">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10.325 4.317c.426-1.756 2.924-1.756 3.35 0a1.724 1.724 0 002.573 1.066c1.543-.94 3.31.826 2.37 2.37a1.724 1.724 0 001.065 2.572c1.756.426 1.756 2.924 0 3.35a1.724 1.724 0 00-1.066 2.573c.94 1.543-.826 3.31-2.37 2.37a1.724 1.724 0 00-2.572 1.065c-.426 1.756-2.924 1.756-3.35 0a1.724 1.724 0 00-2.573-1.066c-1.543.94-3.31-.826-2.37-2.37a1.724 1.724 0 00-1.065-2.572c-1.756-.426-1.756-2.924 0-3.35a1.724 1.724 0 001.066-2.573c-.94-1.543.826-3.31 2.37-2.37.996.608 2.296.07 2.572-1.065z" />
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
+                    </svg>
+                    <span class="text-xs">Settings</span>
+                </button>
+            </div>
+        </div>
+
+        <!-- Chat Detail Screen -->
+        <div id="chat-detail" class="hidden min-h-screen flex flex-col">
+            <!-- Chat Header -->
+            <div class="bg-white dark:bg-gray-900 shadow-sm py-3 px-4 flex items-center sticky top-0 z-20">
+                <button id="back-to-chats-btn" class="mr-3">
+                    <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                        <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M10 19l-7-7m0 0l7-7m-7 7h18" />
+                    </svg>
+                </button>
+                <div class="flex items-center">
+                    <div class="w-10 h-10 bg-gradient-to-br from-lavender to-primary rounded-full flex items-center justify-center text-white font-medium mr-3">
+                        A
+                    </div>
+                    <div>
+                        <div class="font-medium">Alex</div>
+                        <div class="text-xs text-gray-500 dark:text-gray-400 flex items-center">
+                            <span class="inline-block w-2 h-2 bg-green-500 rounded-full mr-1"></span>
+                            Online • Quiet Corner Café
+                        </div>
+                    </div>
+                </div>
+                <div class="ml-auto flex items-center">
+                    <div class="text-xs bg-yellow-100 dark:bg-yellow-900 text-yellow-800 dark:text-yellow-200 px-2 py-1 rounded-full mr-2">
+                        22h left
+                    </div>
+                    <div id="comfort-meter" class="flex items-center bg-green-100 dark:bg-green-900 dark:bg-opacity-30 rounded-full px-2 py-1">
+                        <div class="w-2 h-2 bg-green-500 rounded-full mr-1"></div>
+                        <span class="text-xs text-green-800 dark:text-green-300">High comfort</span>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat Messages -->
+            <div class="flex-grow p-4 overflow-y-auto chat-container">
+                <!-- System Message -->
+                <div class="text-center my-2">
+                    <span class="inline-block bg-gray-100 dark:bg-gray-800 text-gray-500 dark:text-gray-400 rounded-full px-3 py-1 text-xs">
+                        Today, 2:30 PM
+                    </span>
+                </div>
+                
+                <!-- AI Suggestion -->
+                <div class="bg-lavender dark:bg-primary dark:bg-opacity-10 p-3 rounded-lg mb-4 text-sm text-center">
+                    <p class="text-primary font-medium mb-1">Bujji Suggests</p>
+                    <p>You both enjoy indie music and quiet spaces. Alex mentioned they enjoy reading at cafés.</p>
+                </div>
+                
+                <!-- Their Message -->
+                <div class="flex mb-4">
+                    <div class="w-8 h-8 bg-gradient-to-br from-lavender to-primary rounded-full flex items-center justify-center text-white text-sm mr-2 flex-shrink-0">
+                        A
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg rounded-tl-none p-3 max-w-[75%]">
+                        <p class="text-sm">Hey! I noticed we both like coffee and reading. What genre of books do you usually enjoy?</p>
+                    </div>
+                </div>
+                
+                <!-- My Message -->
+                <div class="flex flex-row-reverse mb-4">
+                    <div class="w-8 h-8 bg-primary rounded-full flex items-center justify-center text-white text-sm ml-2 flex-shrink-0">
+                        J
+                    </div>
+                    <div class="bg-primary text-white rounded-lg rounded-tr-none p-3 max-w-[75%]">
+                        <p class="text-sm">Hi! I'm into sci-fi and philosophy books mostly. Currently reading "Project Hail Mary". You?</p>
+                    </div>
+                </div>
+                
+                <!-- Their Message -->
+                <div class="flex mb-4">
+                    <div class="w-8 h-8 bg-gradient-to-br from-lavender to-primary rounded-full flex items-center justify-center text-white text-sm mr-2 flex-shrink-0">
+                        A
+                    </div>
+                    <div class="bg-gray-100 dark:bg-gray-800 rounded-lg rounded-tl-none p-3 max-w-[75%]">
+                        <p class="text-sm">I love sci-fi too! Andy Weir is great. I'm reading "The Midnight Library" right now. What kind of music do you usually listen to?</p>
+                    </div>
+                </div>
+                
+                <!-- Icebreaker Suggestions -->
+                <div class="bg-white dark:bg-gray-900 p-3 rounded-lg shadow-soft mb-4">
+                    <p class="text-xs text-primary font-medium mb-2">AI Icebreaker Suggestions</p>
+                    <div class="space-y-2">
+                        <button class="w-full text-left p-2 bg-lavender dark:bg-primary dark:bg-opacity-10 text-primary rounded text-sm hover:bg-opacity-80 transition-colors">
+                            I'm into indie and ambient music when reading. Do you have any recommendations?
+                        </button>
+                        <button class="w-full text-left p-2 bg-gray-100 dark:bg-gray-800 rounded text-sm hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors">
+                            I enjoy folk and acoustic when at cafés. What's your go-to coffee shop playlist?
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- Chat Input -->
+            <div class="bg-white dark:bg-gray-900 border-t border-gray-200 dark:border-gray-800 p-3">
+                <div class="flex items-center bg-gray-100 dark:bg-gray-800 rounded-full">
+                    <button class="p-2 text-gray-500 dark:text-gray-400">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M14.828 14.828a4 4 0 01-5.656 0M9 10h.01M15 10h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                        </svg>
+                    </button>
+                    <input type="text" placeholder="Type a message..." class="flex-grow bg-transparent border-none focus:ring-0 py-2 px-3 text-base">
+                    <button class="p-2 text-primary">
+                        <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 19l9 2-9-18-9 18 9-2zm0 0v-8" />
+                        </svg>
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bujji Helper Modal -->
+        <div id="bujji-modal" class="fixed bottom-0 left-0 right-0 bg-white dark:bg-gray-900 rounded-t-xl shadow-lg z-30 p-4 transform translate-y-full transition-transform duration-300 ease-in-out">
+            <div class="flex items-start mb-4">
+                <div class="bujji mr-3 w-14 h-14">
+                    <div class="face">
+                        <div class="eyes">
+                            <div class="eye"></div>
+                            <div class="eye"></div>
+                        </div>
+                        <div class="mouth"></div>
+                    </div>
+                </div>
+                <div class="flex-grow bg-card-light dark:bg-card-dark p-3 rounded-lg shadow-soft bubble relative">
+                    <div class="flex justify-between items-start">
+                        <p class="text-sm mb-1">Need help with anything? Here are some suggestions for you:</p>
+                        <button id="close-bujji-btn" class="ml-2 text-gray-500 dark:text-gray-400">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                            </svg>
+                        </button>
+                    </div>
+                    <div class="space-y-2 mt-2">
+                        <button class="w-full text-left p-2 bg-lavender dark:bg-primary dark:bg-opacity-10 text-primary rounded text-sm hover:bg-opacity-80 transition-colors">
+                            How to start a conversation as an introvert
+                        </button>
+                        <button class="w-full text-left p-2 bg-lavender dark:bg-primary dark:bg-opacity-10 text-primary rounded text-sm hover:bg-opacity-80 transition-colors">
+                            Tips for safe in-person meetups
+                        </button>
+                        <button class="w-full text-left p-2 bg-lavender dark:bg-primary dark:bg-opacity-10 text-primary rounded text-sm hover:bg-opacity-80 transition-colors">
+                            Understand my comfort meter
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bujji Trigger Button -->
+        <button id="show-bujji-btn" class="fixed bottom-20 right-4 w-12 h-12 bg-primary rounded-full flex items-center justify-center text-white shadow-lg z-20 hidden">
+            <div class="w-8 h-8 bg-white dark:bg-gray-800 rounded-full flex items-center justify-center">
+                <div class="w-6 h-6 bg-primary rounded-full flex items-center justify-center">
+                    <span class="text-white font-bold">?</span>
+                </div>
+            </div>
+        </button>
+    </div>
+
+    <script>
+        document.addEventListener('DOMContentLoaded', () => {
+            // Check dark mode preference
+            if (window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches) {
+                document.documentElement.classList.add('dark');
+            }
+            
+            window.matchMedia('(prefers-color-scheme: dark)').addEventListener('change', event => {
+                if (event.matches) {
+                    document.documentElement.classList.add('dark');
+                } else {
+                    document.documentElement.classList.remove('dark');
+                }
+            });
+
+            // Initialize variables
+            let currentStep = 0;
+            const totalSteps = 5;
+            
+            const steps = [
+                {
+                    question: "Let's get to know you better. What's your name?",
+                    hint: "This helps me personalize your experience",
+                    input: "text-input-container"
+                },
+                {
+                    question: "What interests would you like to share on your profile?",
+                    hint: "Select at least 3 that represent you",
+                    input: "interests-container"
+                },
+                {
+                    question: "Let's understand your personality a bit.",
+                    hint: "This helps us find compatible matches",
+                    input: "slider-container"
+                },
+                {
+                    question: "What are you looking for on Instamatch?",
+                    hint: "This helps with better matchmaking",
+                    input: "preference-container"
+                },
+                {
+                    question: "Last step! Let's set up your location settings.",
+                    hint: "Required for finding nearby matches",
+                    input: "location-container"
+                }
+            ];
+
+            // Helper function to update progress indicator
+            function updateProgress() {
+                const circle = document.getElementById('progress-indicator');
+                const circumference = 125.6; // 2 * PI * radius (20)
+                const offset = circumference - ((currentStep + 1) / totalSteps) * circumference;
+                circle.style.strokeDashoffset = offset;
+                document.getElementById('step-indicator').textContent = `${currentStep + 1}/${totalSteps}`;
+            }
+
+            // Helper function to show the current step
+            function showStep(step) {
+                // Hide all input containers
+                document.getElementById('text-input-container').classList.add('hidden');
+                document.getElementById('interests-container').classList.add('hidden');
+                document.getElementById('slider-container').classList.add('hidden');
+                document.getElementById('preference-container').classList.add('hidden');
+                document.getElementById('location-container').classList.add('hidden');
+                
+                // Show appropriate input for current step
+                document.getElementById(steps[step].input).classList.remove('hidden');
+                
+                // Update question and hint
+                document.getElementById('current-question').textContent = steps[step].question;
+                const hintElement = document.getElementById('question-hint');
+                hintElement.textContent = steps[step].hint;
+                hintElement.classList.remove('hidden');
+                
+                // Update back button visibility
+                if (step === 0) {
+                    document.getElementById('back-btn').classList.add('opacity-0', 'pointer-events-none');
+                } else {
+                    document.getElementById('back-btn').classList.remove('opacity-0', 'pointer-events-none');
+                }
+                
+                // Update progress indicator
+                updateProgress();
+            }
+
+            // Splash screen timer
+            setTimeout(() => {
+                document.getElementById('splash-screen').classList.add('hidden');
+                document.getElementById('welcome-screen').classList.remove('hidden');
+                document.getElementById('welcome-screen').classList.add('fade-in');
+            }, 2000);
+
+            // Welcome screen buttons
+            document.getElementById('start-onboarding-btn').addEventListener('click', () => {
+                document.getElementById('welcome-screen').classList.add('hidden');
+                document.getElementById('onboarding-container').classList.remove('hidden');
+                document.getElementById('onboarding-container').classList.add('slide-up');
+                showStep(0);
+            });
+
+            document.getElementById('skip-onboarding-btn').addEventListener('click', () => {
+                document.getElementById('welcome-screen').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                document.getElementById('main-app').classList.add('fade-in');
+                document.getElementById('show-bujji-btn').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('show-bujji-btn').classList.add('fade-in');
+                }, 1000);
+            });
+
+            // Onboarding navigation
+            document.getElementById('next-btn').addEventListener('click', () => {
+                if (currentStep < totalSteps - 1) {
+                    currentStep++;
+                    showStep(currentStep);
+                } else {
+                    document.getElementById('onboarding-container').classList.add('hidden');
+                    document.getElementById('completion-screen').classList.remove('hidden');
+                    document.getElementById('completion-screen').classList.add('fade-in');
+                }
+            });
+
+            document.getElementById('back-btn').addEventListener('click', () => {
+                if (currentStep > 0) {
+                    currentStep--;
+                    showStep(currentStep);
+                }
+            });
+
+            document.getElementById('skip-step-btn').addEventListener('click', () => {
+                if (currentStep < totalSteps - 1) {
+                    currentStep++;
+                    showStep(currentStep);
+                } else {
+                    document.getElementById('onboarding-container').classList.add('hidden');
+                    document.getElementById('completion-screen').classList.remove('hidden');
+                }
+            });
+
+            // Location button
+            document.getElementById('location-btn').addEventListener('click', (e) => {
+                e.target.textContent = "Location Access Granted";
+                e.target.classList.add('bg-green-500');
+                e.target.classList.remove('bg-primary');
+            });
+
+            // Complete onboarding
+            document.getElementById('explore-btn').addEventListener('click', () => {
+                document.getElementById('completion-screen').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                document.getElementById('show-bujji-btn').classList.remove('hidden');
+                setTimeout(() => {
+                    document.getElementById('show-bujji-btn').classList.add('fade-in');
+                }, 1000);
+            });
+
+            // Navigation tabs
+            const tabs = ['heatmap', 'discover', 'chats', 'settings'];
+            
+            tabs.forEach(tab => {
+                document.getElementById(`nav-${tab}`).addEventListener('click', () => {
+                    // Reset all navigation buttons
+                    tabs.forEach(t => {
+                        document.getElementById(`nav-${t}`).classList.remove('text-primary');
+                        document.getElementById(`nav-${t}`).classList.add('text-gray-500', 'dark:text-gray-400');
+                        document.getElementById(`${t}-tab`).classList.add('hidden');
+                    });
+                    
+                    // Set active tab
+                    document.getElementById(`nav-${tab}`).classList.remove('text-gray-500', 'dark:text-gray-400');
+                    document.getElementById(`nav-${tab}`).classList.add('text-primary');
+                    document.getElementById(`${tab}-tab`).classList.remove('hidden');
+                });
+            });
+
+            // Ghost Mode Toggles
+            const ghostModeToggles = document.querySelectorAll('#ghost-mode-checkbox, #ghost-mode-settings');
+            
+            ghostModeToggles.forEach(toggle => {
+                toggle.addEventListener('change', () => {
+                    ghostModeToggles.forEach(t => {
+                        t.checked = toggle.checked;
+                    });
+                });
+            });
+
+            // Venue Card Click
+            document.querySelectorAll('#venue-card-1, #venue-card-2, #venue-card-3').forEach(card => {
+                card.addEventListener('click', () => {
+                    document.getElementById('heatmap-tab').classList.add('hidden');
+                    document.getElementById('discover-tab').classList.remove('hidden');
+                    
+                    // Switch active tab in nav
+                    document.getElementById('nav-heatmap').classList.remove('text-primary');
+                    document.getElementById('nav-heatmap').classList.add('text-gray-500', 'dark:text-gray-400');
+                    document.getElementById('nav-discover').classList.remove('text-gray-500', 'dark:text-gray-400');
+                    document.getElementById('nav-discover').classList.add('text-primary');
+                });
+            });
+
+            // Reveal Profile
+            document.querySelectorAll('.reveal-profile').forEach(button => {
+                button.addEventListener('click', (e) => {
+                    const profileId = e.target.dataset.profile;
+                    document.getElementById(profileId).classList.add('revealed');
+                    e.target.textContent = "Revealed";
+                    e.target.disabled = true;
+                });
+            });
+
+            // Chat List Items Click
+            document.querySelectorAll('#chat-item-1, #chat-item-2').forEach(item => {
+                item.addEventListener('click', () => {
+                    document.getElementById('main-app').classList.add('hidden');
+                    document.getElementById('chat-detail').classList.remove('hidden');
+                });
+            });
+
+            // Back to Chats Button
+            document.getElementById('back-to-chats-btn').addEventListener('click', () => {
+                document.getElementById('chat-detail').classList.add('hidden');
+                document.getElementById('main-app').classList.remove('hidden');
+                
+                // Ensure chat tab is active
+                tabs.forEach(t => {
+                    document.getElementById(`nav-${t}`).classList.remove('text-primary');
+                    document.getElementById(`nav-${t}`).classList.add('text-gray-500', 'dark:text-gray-400');
+                    document.getElementById(`${t}-tab`).classList.add('hidden');
+                });
+                
+                document.getElementById('nav-chats').classList.remove('text-gray-500', 'dark:text-gray-400');
+                document.getElementById('nav-chats').classList.add('text-primary');
+                document.getElementById('chats-tab').classList.remove('hidden');
+            });
+
+            // Bujji Helper
+            document.getElementById('show-bujji-btn').addEventListener('click', () => {
+                const bujjiModal = document.getElementById('bujji-modal');
+                bujjiModal.classList.remove('translate-y-full');
+            });
+
+            document.getElementById('close-bujji-btn').addEventListener('click', () => {
+                const bujjiModal = document.getElementById('bujji-modal');
+                bujjiModal.classList.add('translate-y-full');
+            });
+        });
+    </script>
+</body>
+</html>
